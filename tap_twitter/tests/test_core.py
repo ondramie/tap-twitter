@@ -1,22 +1,20 @@
 """Tests standard tap features using the built-in SDK tests library."""
 
 import datetime
+import os
 
-from singer_sdk.testing import get_standard_tap_tests
+from singer_sdk.testing import get_tap_test_class
 
 from tap_twitter.tap import TapTwitter
 
 SAMPLE_CONFIG = {
-    "start_date": datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%d")
+    "user_ids": ["123456789"],
+    "bearer_token": os.getenv("TAP_TWITTER_BEARER_TOKEN"),
+    "start_date": datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%d"),
 }
 
-
 # Run standard built-in tap tests from the SDK:
-def test_standard_tap_tests():
-    """Run standard tap tests from the SDK."""
-    tests = get_standard_tap_tests(
-        TapTwitter,
-        config=SAMPLE_CONFIG
-    )
-    for test in tests:
-        test()
+TestTapTwitter = get_tap_test_class(
+    tap_class=TapTwitter,
+    config=SAMPLE_CONFIG,
+)

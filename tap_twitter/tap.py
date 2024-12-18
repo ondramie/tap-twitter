@@ -2,14 +2,10 @@
 
 from typing import List
 
-from singer_sdk import Tap, Stream
+from singer_sdk import Stream, Tap
 from singer_sdk import typing as th  # JSON schema typing helpers
 
-from tap_twitter.streams import (
-    TweetsStream,
-    UsersStream,
-)
-
+from tap_twitter.streams import TweetsStream, UsersStream
 
 STREAM_TYPES = [
     TweetsStream,
@@ -19,6 +15,7 @@ STREAM_TYPES = [
 
 class TapTwitter(Tap):
     """Twitter tap class."""
+
     name = "tap-twitter"
 
     config_jsonschema = th.PropertiesList(
@@ -26,24 +23,27 @@ class TapTwitter(Tap):
             "bearer_token",
             th.StringType,
             required=True,
-            description="The bearer token to authenticate against the Twitter API using the OAuth 2.0 flow outlined "
-                        "here - https://developer.twitter.com/en/docs/authentication/oauth-2-0/application-only "
+            description="""
+                The bearer token to authenticate against the Twitter API
+                using the OAuth 2.0 flow outlined
+                """
+            "here - https://developer.twitter.com/en/docs/authentication/oauth-2-0/application-only ",  # noqa: E501
         ),
         th.Property(
             "user_ids",
             th.ArrayType(th.StringType),
             required=True,
-            description="List of user IDs of Twitter accounts for which to fetch data"
+            description="List of user IDs of Twitter accounts for which to fetch data",
         ),
         th.Property(
             "url_patterns",
             th.ArrayType(th.StringType),
-            description="List of URL patterns for which to fetch tweets"
+            description="List of URL patterns for which to fetch tweets",
         ),
         th.Property(
             "start_date",
             th.DateTimeType,
-            description="The earliest record date to sync"
+            description="The earliest record date to sync",
         ),
     ).to_dict()
 

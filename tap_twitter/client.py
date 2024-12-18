@@ -1,16 +1,15 @@
 """REST client handling, including TwitterStream base class."""
 
-import backoff
 import copy
-import requests
 from pathlib import Path
 from typing import Any, Callable, Dict, Iterable, Optional
 
+import backoff
+import requests
+from singer_sdk.authenticators import BearerTokenAuthenticator
 from singer_sdk.exceptions import FatalAPIError, RetriableAPIError
 from singer_sdk.helpers.jsonpath import extract_jsonpath
 from singer_sdk.streams import RESTStream
-from singer_sdk.authenticators import BearerTokenAuthenticator
-
 
 SCHEMAS_DIR: Path = Path(__file__).parent / Path("./schemas")
 
@@ -27,8 +26,7 @@ class TwitterStream(RESTStream):
     def authenticator(self) -> BearerTokenAuthenticator:
         """Return a new authenticator object."""
         return BearerTokenAuthenticator.create_for_stream(
-            self,
-            token=self.config.get("bearer_token")
+            self, token=self.config.get("bearer_token")
         )
 
     @property
@@ -85,16 +83,11 @@ class TwitterStream(RESTStream):
         decorated_request = self.request_decorator(self._request)
 
         while not finished:
-            prepared_request = self.prepare_request(
-                context, next_page_token=next_page_token
-            )
+            prepared_request = self.prepare_request(context, next_page_token=next_page_token)
             resp = decorated_request(prepared_request, context)
-            for row in self.parse_response(resp):
-                yield row
+            yield from self.parse_response(resp)
             previous_token = copy.deepcopy(next_page_token)
-            next_page_token = self.get_next_page_token(
-                response=resp, previous_token=previous_token
-            )
+            next_page_token = self.get_next_page_token(response=resp, previous_token=previous_token)
             if next_page_token and next_page_token == previous_token:
                 raise RuntimeError(
                     f"Loop detected in pagination. "
@@ -108,18 +101,16 @@ class TwitterStream(RESTStream):
     ) -> Optional[Any]:
         """Return a token for identifying next page or None if no more pages."""
         if self.next_page_token_jsonpath:
-            all_matches = extract_jsonpath(
-                self.next_page_token_jsonpath, response.json()
-            )
+            all_matches = extract_jsonpath(self.next_page_token_jsonpath, response.json())
             first_match = next(iter(all_matches), None)
             next_page_token = first_match
         else:
-            next_page_token = response.headers.get("X-Next-Page", None)
+            next_page_token = response.headers.get("X-Next-Page")
 
         return next_page_token
 
     def get_additional_url_params(self) -> Dict:
-        pass
+        return {}
 
     def get_url_params(
         self, context: Optional[dict], next_page_token: Optional[Any]
