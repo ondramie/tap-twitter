@@ -20,7 +20,9 @@ class TwitterStream(RESTStream):
     url_base: str = "https://api.twitter.com/2"
 
     records_jsonpath: str = "$.data[*]"  # Or override `parse_response`.
-    next_page_token_jsonpath: str = "$.meta.next_token"  # Or override `get_next_page_token`.
+    next_page_token_jsonpath: str = (
+        "$.meta.next_token"  # Or override `get_next_page_token`.
+    )
 
     @property
     def authenticator(self) -> BearerTokenAuthenticator:
@@ -83,11 +85,15 @@ class TwitterStream(RESTStream):
         decorated_request = self.request_decorator(self._request)
 
         while not finished:
-            prepared_request = self.prepare_request(context, next_page_token=next_page_token)
+            prepared_request = self.prepare_request(
+                context, next_page_token=next_page_token
+            )
             resp = decorated_request(prepared_request, context)
             yield from self.parse_response(resp)
             previous_token = copy.deepcopy(next_page_token)
-            next_page_token = self.get_next_page_token(response=resp, previous_token=previous_token)
+            next_page_token = self.get_next_page_token(
+                response=resp, previous_token=previous_token
+            )
             if next_page_token and next_page_token == previous_token:
                 raise RuntimeError(
                     f"Loop detected in pagination. "
@@ -101,7 +107,9 @@ class TwitterStream(RESTStream):
     ) -> Optional[Any]:
         """Return a token for identifying next page or None if no more pages."""
         if self.next_page_token_jsonpath:
-            all_matches = extract_jsonpath(self.next_page_token_jsonpath, response.json())
+            all_matches = extract_jsonpath(
+                self.next_page_token_jsonpath, response.json()
+            )
             first_match = next(iter(all_matches), None)
             next_page_token = first_match
         else:
