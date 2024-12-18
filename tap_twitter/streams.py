@@ -1,18 +1,18 @@
 """Stream type classes for tap-twitter."""
 
 from pathlib import Path
-from typing import Any, Dict, List, Iterable
+from typing import Any, Dict, Iterable, List
 
 import requests
 
 from tap_twitter.client import TwitterStream
-
 
 SCHEMAS_DIR = Path(__file__).parent / Path("./schemas")
 
 
 class TweetsStream(TwitterStream):
     """Define custom stream."""
+
     name = "tweets"
     path = "/tweets/search/recent"
     primary_keys = ["id"]
@@ -48,11 +48,11 @@ class TweetsStream(TwitterStream):
 
     def parse_response(self, response: requests.Response) -> Iterable[dict]:
         record = response.json()
-        if "includes" in record.keys():
+        if "includes" in record:
             users_lookup = {user["id"]: user for user in record["includes"]["users"]}
         else:
             users_lookup = None
-        for i, tweet in enumerate(record.get("data", [])):
+        for _i, tweet in enumerate(record.get("data", [])):
             if users_lookup:
                 tweet["expansion__author_id"] = users_lookup[tweet["author_id"]]
             else:
@@ -74,18 +74,19 @@ class TweetsStream(TwitterStream):
 
         return " OR ".join(query_elements)
 
-    def get_additional_url_params(self):
+    def get_additional_url_params(self) -> Dict[str, Any]:
         return {
             "max_results": self.max_results,
             "query": self.make_query(),
             "tweet.fields": ",".join(self.tweet_fields),
             "expansions": ",".join(self.expansions),
-            "user.fields": ",".join(self.user_fields)
+            "user.fields": ",".join(self.user_fields),
         }
 
 
 class UsersStream(TwitterStream):
     """Define custom stream."""
+
     name = "users"
     path = "/users"
     primary_keys = ["id"]
@@ -108,8 +109,8 @@ class UsersStream(TwitterStream):
         "withheld",
     ]
 
-    def get_additional_url_params(self):
+    def get_additional_url_params(self) -> Dict[str, str]:
         return {
             "ids": ",".join(self.config.get("user_ids")),
-            "user.fields": ",".join(self.user_fields)
+            "user.fields": ",".join(self.user_fields),
         }
